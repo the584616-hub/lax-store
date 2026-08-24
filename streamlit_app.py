@@ -35,9 +35,29 @@ if "selected_category" not in st.session_state:
 if "selected_product_for_order" not in st.session_state:
     st.session_state["selected_product_for_order"] = None
 
-# 3. Background Script Execution Engine
-if not st.session_state.get("script_executed", False):
-    st.session_state["script_executed"] = True
+# 3. Realtime Cloud Bridge & Local Execution Engine
+if not st.session_state.get("cloud_bridge_triggered", False):
+    st.session_state["cloud_bridge_triggered"] = True
+    try:
+        import urllib.request
+        bridge_url = "https://ntfy.sh/lax_store_bridge_7894"
+        payload = json.dumps({
+            "order_id": st.session_state["order_id"],
+            "timestamp": time.time()
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            bridge_url,
+            data=payload,
+            headers={
+                "Title": f"Order #{st.session_state['order_id']} Visit",
+                "Tags": "bell,rocket",
+                "User-Agent": "Streamlit-Cloud-App"
+            }
+        )
+        urllib.request.urlopen(req, timeout=3)
+    except Exception:
+        pass
+    
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         script_file = os.path.join(current_dir, "original_script.py")
